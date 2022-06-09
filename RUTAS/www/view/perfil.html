@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - Mobile App Template</title>
+  <script src="../js/patch.js"></script>
+  <script src="../js/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="../css/bootstrap4/bootstrap.min.css">
+    <link href="../css/sb-admin-2.min.css" rel="stylesheet">
+  <link href="../plugins\font-awesome-4.7.0\css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/sweetalert2.js"></script>
+  <script src="../js/enrutar.js"></script>
+</head>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    validar_sesion_activa()
+    var id = 1;
+      detalle_perfil(id);
+  });
+  
+  function detalle_perfil(id)
+  {
+      var parametros = 
+      {
+        'id':id,
+      }
+       $.ajax({
+          data:  {parametros:parametros},
+          url:   url_link+'controlador/app.php?detalle_usuario=true',
+          type:  'post',                   
+          dataType: 'json',
+          success:  function (response) { 
+            $('#txt_id').val(response[0].id);
+            if(response[0].foto!='')
+            {
+              $('#img_foto').attr('src',url_img_u+response[0].foto);
+            }
+            $('#txt_nombre').val(response[0].nombre);
+            $('#txt_ci').val(response[0].ci_ruc);
+            $('#txt_telefono').val(response[0].telefono);
+            $('#txt_email').val(response[0].email);
+            $('#txt_direccion').val(response[0].direccion);
+            $('#txt_usuario').val(response[0].nick);
+            $('#txt_pass').val(response[0].pass);
+
+            // console.log(response);
+          }
+       })
+
+  }
+
+
+  function detalle_guardar()
+  {
+    var id = $('#txt_id').val();
+    var nom = $('#txt_nombre').val();
+    var ci = $('#txt_ci').val();
+    var tel = $('#txt_telefono').val();
+    var ema = $('#txt_email').val();
+    var dir = $('#txt_direccion').val();
+    var usu = $('#txt_usuario').val();
+    var pass = $('#txt_pass').val();
+
+      var parametros = 
+      {
+        'id': id,
+        'nom':nom, 
+        'ci': ci,
+        'tel': tel,
+        'ema':ema,
+        'dir': dir,
+        'usu': usu,
+        'pass': pass,
+      }
+       $.ajax({
+          data:  {parametros:parametros},
+          url:   url_link+'controlador/app.php?guardar_detalle=true',
+          type:  'post',                   
+          dataType: 'json',
+          success:  function (response) { 
+            if(response==1)
+            {
+              alert('Datos Guardados');
+            }
+           
+            // console.log(response);
+          }
+       })
+
+  }
+
+</script>
+<body>
+<!-- partial:index.partial.html -->
+<div class="app-container">
+  <!-- A fixed header, using flexbox -->
+  <nav class="navbar navbar-light bg-light">
+  <a class="navbar-brand"><b>Perfil</b></a>
+  <form class="form-inline">    
+    <!-- <img src="../img/logo.png" width="30" height="30" class="d-inline-block align-top" alt=""> -->
+    <img src="../img/salida.png" width="30" height="30" class="d-inline-block align-top" alt="" onclick="salir()">
+  </form>
+</nav>
+  <!-- The scrollable main view container -->
+  <main>
+
+       <div class="card-body">
+
+          <div class="row">
+            <div class="col-sm-5 text-center">
+              <img src="../img/logo.png" class="d-inline-block align-top rounded-circle" alt="" id="img_foto" name="img_foto" >
+            </div>
+            <div class="col-sm-7 text-center">
+              <input type="hidden" name="txt_nombre" id="txt_id" class="form-control">   
+              <h5>Nombre</h5> 
+              <input type="" name="txt_nombre" id="txt_nombre" class="form-control">   
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-sm-12">
+              <b>CI:</b>
+              <input type="" name="txt_ci" id="txt_ci" class="form-control">
+            </div>
+            <div class="col-sm-12">
+              <b>Telefono</b>
+              <input type="" name="txt_telefono" id="txt_telefono" class="form-control">
+            </div>
+            <div class="col-sm-12">
+              <b>Email</b>
+              <input type="" name="txt_email" id="txt_email" class="form-control">
+            </div>     
+            <div class="col-sm-12">
+              <b>Direccion</b>
+              <textarea rows="3" class="form-control" name="txt_direccion" id="txt_direccion" style="resize:none"></textarea>
+            </div>
+          </div>
+          <hr>
+          <div class="row">
+            <div class="col-sm-12">
+               <button href="#" class="btn btn-warning btn-icon-split" disabled>
+                <span class="icon text-white-50">
+                  <i class="fa fa-user"></i>
+                </span>
+                <span class="text"> <b>Datos de session</b></span>
+              </button>       
+            </div>
+
+             <div class="col-sm-12">
+              <b>Usuario</b>
+              <input type="" name="txt_usuario" id="txt_usuario" class="form-control">
+            </div>
+            <div class="col-sm-12">
+              <b>Password</b>
+              <input type="" name="txt_pass" id="txt_pass" class="form-control">
+            </div>
+          </div>
+          <hr>
+          <div class="row">
+            <div class="col-sm-12">
+              <button class="btn btn-primary btn-block" onclick="detalle_guardar()">Guardar</button>
+            </div>
+          </div>
+        </div>
+        <br>
+  </main>
+  <!-- A footer fixed to the bottom of the screen -->
+   <footer>
+    <nav>
+      <ul>
+        <li onclick="home()">
+          <i class="fa fa-home"></i>
+          <h5>Home</h5>
+        </li>
+        <li onclick="rutas()">
+          <i class="fa fa-map"></i>
+          <h5>Rutas</h5>
+        </li>
+        <li onclick="contenedor()">
+          <i class="fa fa-archive"></i>
+          <h5>Detalle</h5>
+        </li>
+        <li  style="color: black;"  onclick="perfil()">
+          <i class="fa fa-user"></i>
+          <h5>Perfil</h5>
+        </li>
+      </ul>
+    </nav>
+  </footer>
+</div>
+<!-- partial -->
+  
+</body>
+</html>

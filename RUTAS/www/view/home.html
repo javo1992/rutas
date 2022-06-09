@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <script src="../js/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="../css/bootstrap4/bootstrap.min.css">
+    <link href="../css/sb-admin-2.min.css" rel="stylesheet">
+  <link href="../plugins\font-awesome-4.7.0\css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
+  <link href="../plugins\fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css"/>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/patch.js"></script>
+  <script src="../js/sweetalert2.js"></script>
+  <script src="../js/enrutar.js"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function () {
+      validar_sesion_activa()
+       datos_generales();
+       usuario_home();
+       contenedores_home();
+    });
+    function datos_generales()
+    {       
+         $.ajax({
+            // data:  {parametros:parametros},
+            url:   url_link+'controlador/app.php?home_pie=true',
+            type:  'post',                   
+            dataType: 'json',
+            success:  function (response) { 
+             $('#lbl_conte').text(response.conte);
+             valores = [response.lleno,response.medio,response.vacio];
+             pintar_pai(valores);
+             // detalle_contenedor();
+             // estadisticas();
+
+              console.log(response);
+            }
+         })
+    }
+
+    function usuario_home()
+    {       
+         $.ajax({
+            // data:  {parametros:parametros},
+            url:   url_link+'controlador/app.php?usuario_home=true',
+            type:  'post',                   
+            dataType: 'json',
+            success:  function (response) { 
+             $('#lbl_usu').text(response);
+             // detalle_contenedor();
+             // estadisticas();
+
+              console.log(response);
+            }
+         })
+    }
+
+    function contenedores_home()
+    {       
+         $.ajax({
+            // data:  {parametros:parametros},
+            url:   url_link+'controlador/app.php?contenedor_home=true',
+            type:  'post',                   
+            dataType: 'json',
+            success:  function (response) { 
+             // $('#lbl_usu').text(response);
+             // detalle_contenedor();
+             // estadisticas();
+             $('#lbl_nom_contenedor').text(response.max.nombre);
+             $('#lbl_nom_contenedor1').text(response.min.nombre);
+             $('#lbl_detalle').html('<a href="contenedor.html?id='+response.max.id+'">Ver detalle</a>');
+             $('#lbl_detalle1').html('<a href="contenedor.html?id='+response.min.id+'">Ver detalle</a>');
+
+              console.log(response);
+            }
+         })
+    }
+  </script>
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div class="app-container">
+  <!-- A fixed header, using flexbox -->
+ <nav class="navbar navbar-light bg-light">
+  <a class="navbar-brand"><b>Home</b></a>
+  <form class="form-inline">    
+    <img src="../img/salida.png" width="30" height="30" class="d-inline-block align-top" alt="" onclick="salir()">
+  </form>
+</nav>
+  <!-- The scrollable main view container -->
+  <main class="container-fluid">
+    <br> 
+    <div class="row">
+      <div class="col-xl-4 col-lg-5">
+              <div class="card shadow mb-4">
+                <!-- Card Header - Dropdown -->
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Estadisticas Actuales</h6>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                  <div class="chart-pie pt-4"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                    <canvas id="myPieChart" width="625" height="253" style="display: block; width: 625px; height: 253px;" class="chartjs-render-monitor"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-6 mb-4">
+          <div class="card bg-light text-black shadow">
+            <div class="card-body">
+               <button href="#" class="btn btn-danger btn-icon-split" disabled>
+                  <span class="icon text-white-50">
+                    <i class="fa fa-trash"></i>
+                  </span>
+                  <span class="text"> <b>contenedor mas usuado</b></span>
+                </button>       
+              <h1 id="lbl_nom_contenedor">Contenedor 1</h1>
+              <div class="text-right" id="lbl_detalle">
+                  <a>Ver detalle</a>
+              </div>
+            </div>
+          </div>
+      </div>
+      <div class="col-lg-6 mb-4">
+          <div class="card bg-light text-black shadow">
+            <div class="card-body">
+               <button href="#" class="btn btn-success btn-icon-split" disabled>
+                  <span class="icon text-white-50">
+                    <i class="fa fa-trash"></i>
+                  </span>
+                  <span class="text"> <b>contenedor menos usuado</b></span>
+                </button>       
+              <h1 id="lbl_nom_contenedor1">Contenedor 5</h1>
+              <div class="text-right" id="lbl_detalle1">
+                  <a>Ver detalle</a>
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
+
+
+   <div class="row">
+         <div class="col-xl-3 col-6">
+              <div class="card border-left-warning shadow h-100 py-2">
+                  <div class="card-body">
+                      <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                  Tachos</div>
+                              <div class="h5 mb-0 font-weight-bold text-gray-800" id="lbl_conte">0</div>
+                          </div>
+                          <div class="col-auto">
+                              <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+           <div class="col-xl-3 col-6">
+              <div class="card border-left-warning shadow h-100 py-2">
+                  <div class="card-body">
+                      <div class="row no-gutters align-items-center">
+                          <div class="col mr-2">
+                              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Usuarios</div>
+                              <div class="h5 mb-0 font-weight-bold text-gray-800" id="lbl_usu">0</div>
+                          </div>
+                          <div class="col-auto">
+                              <i class="fas fa-user fa-2x text-gray-300"></i>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12"><br></div>
+    </div>
+  </main>
+  <!-- A footer fixed to the bottom of the screen -->
+  <footer>
+    <nav>
+      <ul>
+        <li style="color: black;" onclick="home()">
+          <i class="fa fa-home"></i>
+          <h5>Home</h5>
+        </li>
+        <li onclick="rutas()">
+          <i class="fa fa-map"></i>
+          <h5>Rutas</h5>
+        </li>
+        <li onclick="contenedor()">
+          <i class="fa fa-archive"></i>
+          <h5>Detalle</h5>
+        </li>
+        <li onclick="perfil()">
+          <i class="fa fa-user"></i>
+          <h5>Perfil</h5>
+        </li>
+      </ul>
+    </nav>
+  </footer>
+</div>
+<!-- partial -->
+<script src="../js/chart.js/Chart.min.js"></script>
+
+<script type="text/javascript">
+  // Set new default font family and font color to mimic Bootstrap's default styling
+Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+Chart.defaults.global.defaultFontColor = '#858796';
+
+// Pie Chart Example
+var ctx = document.getElementById("myPieChart");
+function pintar_pai(datos)
+{
+var myPieChart = new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+    labels: ["Lleno", "Medio", "Vacio"],
+    datasets: [{
+      data: datos,
+      backgroundColor: ['#e74a3b', '#f6c23e', '#28a745'],
+      hoverBackgroundColor: ['#e74a3bf', '#f6c23ef', '#28a745f'],
+      hoverBorderColor: "rgba(234, 236, 244, 1)",
+    }],
+  },
+  options: {
+    maintainAspectRatio: false,
+    tooltips: {
+      backgroundColor: "rgb(255,255,255)",
+      bodyFontColor: "#858796",
+      borderColor: '#dddfeb',
+      borderWidth: 1,
+      xPadding: 15,
+      yPadding: 15,
+      displayColors: false,
+      caretPadding: 10,
+    },
+    legend: {
+      display: true
+    },
+    cutoutPercentage: 80,
+  },
+});
+}
+
+</script>
+  
+</body>
+</html>

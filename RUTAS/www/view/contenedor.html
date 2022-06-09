@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <script src="../js/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="../css/bootstrap4/bootstrap.min.css">
+    <link href="../css/sb-admin-2.min.css" rel="stylesheet">
+  <link href="../plugins\font-awesome-4.7.0\css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/leaflet-routing-machine.css" /> 
+  <style>body { padding: 0; margin: 0; } #map { height: 100vw; width: 100%; }</style>
+  <script src="../js/patch.js"></script>
+  <script src="../js/sweetalert2.js"></script>
+  <script src="../js/enrutar.js"></script>
+
+  <script type="text/javascript"> 
+  $(document).ready(function () {
+    validar_sesion_activa()
+    contenedores();   
+  });
+    function contenedores()
+    {       
+         $.ajax({
+            // data:  {parametros:parametros},
+            url:   url_link+'controlador/app.php?contenedores=true',
+            type:  'post',                   
+            dataType: 'json',
+            success:  function (response) { 
+             $('#ddl_contenedores').html(response);
+
+              var id =  getParameterByName('id'); 
+              if(id!=''){
+                $('#ddl_contenedores').val(id);
+              }
+
+            detalle_contenedor();
+            estadisticas();
+
+              // console.log(response);
+            }
+         })
+    }
+
+    function detalle_contenedor()
+    {
+      var id = $('#ddl_contenedores').val();
+      var parametros = 
+      {
+        'id':id,
+      }
+
+         $.ajax({
+            data:  {parametros:parametros},
+            url:   url_link+'controlador/app.php?detalle_contenedores=true',
+            type:  'post',                   
+            dataType: 'json',
+            success:  function (response) { 
+              console.log(response);
+              if(response[0].foto!='')
+              {
+                $('#img_foto').attr('src',url_img_c+response[0].foto);
+              }
+              $('#lbl_nombre').text(response[0].nombre);
+              if(response[0].alto !='' && response[0].alto !=null)
+              {
+                $('#lbl_alto').text(response[0].alto);
+              }
+              if(response[0].largo !='' && response[0].largo !=null)
+              {
+                 $('#lbl_largo').text(response[0].largo);
+              }
+              if(response[0].ancho !='' && response[0].ancho !=null)
+              {
+                $('#lbl_ancho').text(response[0].ancho);
+              }
+              if(response[0].descripcion !='' && response[0].descripcion !=null)
+              {
+                $('#lbl_descripcion').text(response[0].descripcion);
+              }              
+              // $('#lbl_nombre').text(response[0].nombre);
+              if(response[0].estado==3)
+              {                
+                $('#lbl_estado').html('<small class="badge badge-danger badge-counter" id="lbl_estado"><i class="fa fa-clock-o"></i> Lleno</small>');
+              }else if(response[0].estado ==2)
+              {
+                $('#lbl_estado').html('<small class="badge badge-warning badge-counter" id="lbl_estado"><i class="fa fa-clock-o"></i> Medio</small>');
+              }else
+              {
+                $('#lbl_estado').html('<small class="badge badge-success badge-counter" id="lbl_estado"><i class="fa fa-clock-o"></i> Vacio</small>');
+              }
+
+              if(response[0].la !='' && response[0].lo!='' || response[0].la !=null && response[0].lo!=null)
+              {
+
+               var ubi = [response[0].la,response[0].lo]; 
+
+
+               $("#map_con").html('<div class="col-12" id="map"></div>');
+                var map = L.map('map').setView(ubi, 18);
+                var tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+                  maxZoom: 22,
+                  attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+                    'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+                  id: 'mapbox/streets-v11',
+                  tileSize: 512,
+                  zoomOffset: -1
+                }).addTo(map);
+                var marker = L.marker(ubi).addTo(map);
+              }
+            }
+         })
+
+    }
+
+    function estadisticas()
+    {
+      var id = $('#ddl_contenedores').val();
+      var parametros = 
+      {
+        'id':id,
+      }
+
+         $.ajax({
+            data:  {parametros:parametros},
+            url:   url_link+'controlador/app.php?estadisticas_contenedores=true',
+            type:  'post',                   
+            dataType: 'json',
+            success:  function (response) {  
+
+            pintar(response);          
+
+              console.log(response);
+            }
+         })
+
+    }
+
+     function elimina()
+        {
+         if(ruta)
+         {
+            map.removeControl(ruta);
+            map.removeControl(pop);
+         }                   
+        }
+       
+  </script>
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div class="app-container">
+  <!-- A fixed header, using flexbox -->
+ <nav class="navbar navbar-light bg-light">
+  <a class="navbar-brand"><b>Detalle de contenedores</b></a>
+  <form class="form-inline">    
+    <!-- <img src="../img/logo.png" width="30" height="30" class="d-inline-block align-top" alt=""> -->
+    <img src="../img/salida.png" width="30" height="30" class="d-inline-block align-top" alt="" onclick="salir()">
+  </form>
+</nav>
+  <!-- The scrollable main view container -->
+  <main>
+    <!--  THIS ELEMENT IS JUST FOR DEMO PURPOSES  -->
+    <!-- <div class="spacer">Content goes in here</div> -->
+
+    <div class="card-body">
+
+    <div class="row">
+      <div class="col-12">
+         <select class="form-control form-control-sm" id="ddl_contenedores" name="ddl_contenedores" onchange="detalle_contenedor();estadisticas()">
+          <option value=""><h1>Seleccione</h1></option>
+        </select>
+      </div>
+      <div class="col-sm-5 text-center">
+        <img src="../img/logo.png" class="d-inline-block align-top rounded-circle" alt="" id="img_foto">
+      </div>
+      <div class="col-sm-7 text-center">
+        <h1 id="lbl_nombre">Contenedor 1</h1>        
+        <p id="lbl_estado"></p>        
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-sm-12">
+         <button href="#" class="btn btn-warning btn-icon-split" disabled>
+          <span class="icon text-white-50">
+            <i class="fa fa-list-ol"></i>
+          </span>
+          <span class="text"> <b>Medidas</b></span>
+        </button>       
+      </div>
+      <div class="col-sm-12"><br></div>
+      <div class="col-sm-4 col-4 text-center">
+        <b>Alto</b>
+        <br>
+        <p id="lbl_alto">0m</p>
+      </div>
+      <div class="col-sm-4 col-4 text-center">
+        <b>Largo</b>
+        <br>
+        <p id="lbl_largo">0m</p>
+      </div>
+      <div class="col-sm-4 col-4 text-center">
+        <b>Ancho</b>
+        <br>
+        <p id="lbl_ancho">0m</p>
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="col-sm-12">
+         <button href="#" class="btn btn-warning btn-icon-split" disabled>
+          <span class="icon text-white-50">
+            <i class="fa fa-pencil"></i>
+          </span>
+          <span class="text"> <b>Descripcion</b></span>
+        </button>
+
+      </div>
+      <div class="col-sm-12">
+        <p id="lbl_descripcion">Sin descripcion</p>
+      </div>
+    </div>
+
+    <hr>
+    <div class="row">
+       <div class="col-sm-12">
+         <button href="#" class="btn btn-warning btn-icon-split" disabled>
+          <span class="icon text-white-50">
+            <i class="fa fa-pencil"></i>
+          </span>
+          <span class="text"> <b>Estadisticas</b></span>
+        </button>
+      </div>
+      <div class="col-sm-12"><br></div>
+      <div class="col-sm-12">
+        <div class="card shadow mb-4">                
+                <div class="card-body">
+                  <div class="chart-bar">
+                    <canvas id="myBarChart"></canvas>
+                  </div>             
+                </div>
+              </div>
+
+      </div>
+    </div>
+
+    <hr>
+    <div class="row">
+      <div class="col-sm-12">
+        <button href="#" class="btn btn-info btn-icon-split" disabled>
+          <span class="icon text-white-50">
+            <i class="fa fa-map-marker"></i>
+          </span>
+          <span class="text"><b>Ubicacion</b></span>
+        </button>
+
+      </div>      
+      <div class="col-sm-12"><br></div>
+      <div class="col-sm-12" id="map_con">
+        <div class="col-12" id="map">
+          
+        </div>
+        
+      </div>
+    </div>
+
+      
+    </div>
+  </main>
+  <!-- A footer fixed to the bottom of the screen -->
+   <footer>
+    <nav>
+      <ul>
+        <li onclick="home()">
+          <i class="fa fa-home"></i>
+          <h5>Home</h5>
+        </li>
+        <li onclick="rutas()">
+          <i class="fa fa-map"></i>
+          <h5>Rutas</h5>
+        </li>
+        <li style="color: black;" onclick="contenedor()">
+          <i class="fa fa-archive"></i>
+          <h5>Detalle</h5>
+        </li>
+        <li onclick="perfil()">
+          <i class="fa fa-user"></i>
+          <h5>Perfil</h5>
+        </li>
+      </ul>
+    </nav>
+  </footer>
+</div>
+<!-- partial -->
+  
+
+  <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+<script src="../js/leaflet-routing-machine.js"></script>
+
+
+<script src="../js/chart.js/Chart.min.js"></script>
+
+<script type="text/javascript">
+  // Set new default font family and font color to mimic Bootstrap's default styling
+Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+Chart.defaults.global.defaultFontColor = '#858796';
+
+function number_format(number, decimals, dec_point, thousands_sep) {
+  // *     example: number_format(1234.56, 2, ',', ' ');
+  // *     return: '1 234,56'
+  number = (number + '').replace(',', '').replace(' ', '');
+  var n = !isFinite(+number) ? 0 : +number,
+    prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+    sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+    dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+    s = '',
+    toFixedFix = function(n, prec) {
+      var k = Math.pow(10, prec);
+      return '' + Math.round(n * k) / k;
+    };
+  // Fix for IE parseFloat(0.55).toFixed(0) = 0;
+  s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+  if (s[0].length > 3) {
+    s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
+  }
+  if ((s[1] || '').length < prec) {
+    s[1] = s[1] || '';
+    s[1] += new Array(prec - s[1].length + 1).join('0');
+  }
+  return s.join(dec);
+}
+
+// Bar Chart Example
+var ctx = document.getElementById("myBarChart");
+
+function pintar(datos){
+  var d = datos.split(',');
+var myBarChart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: ["lun", "Mar", "Mie", "Jue", "Vie", "Sab","Dom"],
+    datasets: [{
+      label: "Promedio",
+      backgroundColor: "#4e73df",
+      hoverBackgroundColor: "#2e59d9",
+      borderColor: "#4e73df",
+      data: d,
+    }],
+  },
+  options: {
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        left: 10,
+        right: 25,
+        top: 25,
+        bottom: 0
+      }
+    },
+    scales: {
+      xAxes: [{
+        time: {
+          unit: 'Dias'
+        },
+        gridLines: {
+          display: false,
+          drawBorder: false
+        },
+        ticks: {
+          maxTicksLimit: 6
+        },
+        maxBarThickness: 25,
+      }],
+      yAxes: [{
+        ticks: {
+          min: 0,
+          max: 3,
+          maxTicksLimit: 5,
+          padding: 10,
+          // Include a dollar sign in the ticks
+          callback: function(value, index, values) {
+            return  number_format(value);
+          }
+        },
+        gridLines: {
+          color: "rgb(234, 236, 244)",
+          zeroLineColor: "rgb(234, 236, 244)",
+          drawBorder: false,
+          borderDash: [2],
+          zeroLineBorderDash: [2]
+        }
+      }],
+    },
+    legend: {
+      display: false
+    },
+    tooltips: {
+      titleMarginBottom: 10,
+      titleFontColor: '#6e707e',
+      titleFontSize: 14,
+      backgroundColor: "rgb(255,255,255)",
+      bodyFontColor: "#858796",
+      borderColor: '#dddfeb',
+      borderWidth: 1,
+      xPadding: 15,
+      yPadding: 15,
+      displayColors: false,
+      caretPadding: 10,
+      callbacks: {
+        label: function(tooltipItem, chart) {
+          var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
+          return datasetLabel + ': ' + number_format(tooltipItem.yLabel);
+        }
+      }
+    },
+  }
+});
+}
+</script>
+
+
+</body>
+</html>

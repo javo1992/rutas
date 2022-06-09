@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: * 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;"> -->
+       
+
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" type="text/css" href="../css/bootstrap4/bootstrap.min.css">
+  <link href="../css/sb-admin-2.min.css" rel="stylesheet">
+  <link href="../plugins\font-awesome-4.7.0\css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/leaflet-routing-machine.css" /> 
+  <script src="../js/jquery-3.6.0.min.js"></script>
+  <script src="../css/bootstrap4/popper.js"></script>
+  <script src="../css/bootstrap4/bootstrap.min.js"></script>
+  <script src="../js/patch.js"></script>
+  <script src="../js/sweetalert2.js"></script>
+  <script src="../js/enrutar.js"></script>
+
+
+  <style>body { padding: 0; margin: 0; } #map { height: 100vw; width: 100%; }</style>
+
+   <script type="text/javascript">
+    var ruta;
+    var puntos_online=[];
+    var mark_estaticas ;
+    var pop;
+    $(document).ready(function () {
+      validar_sesion_activa()
+        estados();
+        // setTimeout('revisar()',3000);
+        setInterval(revisar,4000)
+    });
+
+    function revisar()
+    {
+      if(puntos_online.length===0)
+      {
+        console.log('nohay');
+      }else
+      {
+        elimina();
+         navigator.geolocation.watchPosition(onSuccess, onError);
+         lat = $('#txt_lat').val();
+         lon = $('#txt_lon').val();
+         puntos_online[0] = L.latLng(lat,lon);
+         pintar_puntos(puntos_online,mark_estaticas);
+      }
+    }
+
+    function estados()
+    {
+         $.ajax({
+          // data:  {parametros:parametros},
+          url:   url_link+'controlador/app.php?estados_app=true',
+          type:  'post',                
+          dataType: 'json',
+          success:  function (response) { 
+            $('#ddl_estado').html(response);                
+          }
+        });
+
+    }
+
+
+
+      function buscar_puntos()
+        {
+          if($('#ddl_estado').val()=='')
+          {
+
+            return false;
+          }
+           $('#modal_espera').modal('show');
+            elimina();
+            var parametros = 
+            {
+              'estado':$('#ddl_estado').val(),
+              'lat':$('#txt_lat').val(),
+              'lon':$('#txt_lon').val(),
+            }
+             $.ajax({
+              data:  {parametros:parametros},
+              url:   url_link+'controlador/app.php?puntos_app=true',
+              type:  'post',
+              dataType: 'json',
+              success:  function (response) { 
+                var puntos =[];
+                var mark =[] ;
+                var nu = response.length;    
+                response.forEach(function(data, index) {
+                    // console.log(nu);
+                    // return false;                 
+                    if(data.estado==1)
+                    {
+                      mark.push(L.marker([data.la, data.lo],{icon: vacio},{draggable: false}).bindPopup('<b>'+data.nombre+'</b>').openPopup());
+                    }else if(data.estado==2)
+                    {
+                       mark.push(L.marker([data.la, data.lo],{icon: medio},{draggable: false}).bindPopup('<b>'+data.nombre+'</b>').openPopup());
+                     }else if(data.estado==3)
+                     {
+                       mark.push(L.marker([data.la, data.lo],{icon: lleno},{draggable: false}).bindPopup('<b>'+data.nombre+'</b>').openPopup());
+                     }else{
+                       mark.push(L.marker([data.la, data.lo],{draggable: false}).bindPopup('<b>'+data.nombre+'</b>').openPopup());
+                     }
+                  puntos.push(L.latLng(data.la, data.lo));
+
+                    
+                });
+
+                pintar_puntos(puntos,mark);   
+                puntos_online = puntos;
+                mark_estaticas = mark;  
+
+                $('#modal_espera').modal('hide');         
+              }
+            });
+        }
+
+        function pintar_puntos(puntos,popup)
+        {
+            ruta = L.Routing.control({
+                waypoints:puntos,
+                language: 'es', 
+                routeWhileDragging: false,
+                draggableWaypoints: false,
+            }).addTo(map);
+          ruta.hide();
+          pop = L.layerGroup(popup).addTo(map);
+
+        }
+
+        function elimina()
+        {
+         if(ruta)
+         {
+            map.removeControl(ruta);
+            map.removeControl(pop);
+         }                   
+        }
+       
+       </script>
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div class="app-container">
+  <!-- A fixed header, using flexbox -->
+  <nav class="navbar navbar-light bg-light">
+  <a class="navbar-brand"><b>Rutas</b></a>
+  <form class="form-inline">    
+    <!-- <img src="../img/logo.png" width="30" height="30" class="d-inline-block align-top" alt=""> -->
+    <img src="../img/salida.png" width="30" height="30" class="d-inline-block align-top" alt="" onclick="salir()">
+  </form>
+</nav>
+
+  <!-- The scrollable main view container -->
+  <div class="row">
+    <div class="col-sm-12">
+        <div class="input-group">
+          <div class="input-group-prepend">
+              <button class="btn btn-sm btn-primary btn-block" onclick="elimina();buscar_posicion()"><i class="fa fa-map-marker" style="font-size: 26px;"></i></button>
+          </div>
+           <select class="form-control" id="ddl_estado" name="ddl_estado" onchange="buscar_puntos()">
+                    <option>Seleccione estado de contenedor</option>
+                </select>
+                <input type="hidden" name="txt_lat" id="txt_lat">
+                <input type="hidden" name="txt_lon" id="txt_lon">      
+        </div>
+      </div>
+  </div>
+  <div id="lbl_mensaje">
+    
+  </div>
+  <main id="map">
+    <!--  THIS ELEMENT IS JUST FOR DEMO PURPOSES  -->
+   
+
+  </main>
+  <!-- <br> -->
+  <!-- A footer fixed to the bottom of the screen -->
+  <footer>
+    <nav>
+      <ul>
+        <li onclick="home()">
+          <i class="fa fa-home"></i>
+          <h5>Home</h5>
+        </li>
+        <li   style="color: black;"  onclick="rutas()">
+          <i class="fa fa-map"></i>
+          <h5>Rutas</h5>
+        </li>
+        <li onclick="contenedor()">
+          <i class="fa fa-archive"></i>
+          <h5>Detalle</h5>
+        </li>
+        <li onclick="perfil()">
+          <i class="fa fa-user"></i>
+          <h5>Perfil</h5>
+        </li>
+      </ul>
+    </nav>
+  </footer>
+</div>
+
+
+<!-- partial -->
+<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+<script src="../js/leaflet-routing-machine.js"></script>
+
+<script>
+  var map = L.map('map').fitWorld();
+
+  var tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+    maxZoom: 18,
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+      'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+    id: 'mapbox/streets-v11',
+    tileSize: 512,
+    zoomOffset: -1
+  }).addTo(map);
+
+  function onLocationFound(e) {
+    var radius = e.accuracy / 2;
+
+    var locationMarker = L.marker(e.latlng).addTo(map)
+      .bindPopup('Mi posicion').openPopup();
+
+    var locationCircle = L.circle(e.latlng, radius).addTo(map);
+  }
+
+  function onLocationError(e) {
+    alert(e.message);
+  }
+
+  map.on('locationfound', onLocationFound);
+  map.on('locationerror', onLocationError);
+
+  map.locate({setView: true, maxZoom: 16});
+</script>
+
+  <script src="../js/rutas.js"></script>
+
+<div id="modal_espera" class="modal fade" role="dialog" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog  modal-dialog-centered modal-sm">
+
+    <!-- Modal content-->
+    <div class="modal-content" >
+      <div class="modal-body">
+        <div class="row">
+            <div class="col-sm-12 text-center">
+                <img src="../img/sistema/ubicacion1.gif" id="img_espera" style="width:90%"><br>
+                <b id="lbl_espera">CALCULANDO RUTA...</b>
+            </div>
+        </div>
+      </div>
+      
+    </div>
+
+  </div>
+</div>
+
+
+
+</body>
+</html>
